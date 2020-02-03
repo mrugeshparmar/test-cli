@@ -1,4 +1,5 @@
 organization:
   orgId: 53269e5d-3b08-47ea-a438-59e2bab9f8d1
   orgName: Mrugesh LLC
-specifications: []
+specifications:
+  - appointment-v1-test-file.yaml
