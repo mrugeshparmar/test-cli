@@ -1,0 +1,608 @@
+swagger: '2.0'
+info:
+  version: '1.0.0'
+  title: appointments
+  description: |
+    ## Fortellis - Service - Appointments
+    A service appointment is a booking of a vehicle into the service department for work that needs to be carried out on the vehicle. This could be a service, repair, body repair, government test etc.
+    ## What does this API do?
+    The API will allow you to query, create and manage service appointments. 
+    ## Intended Audience
+    It is expected that systems that require create, read, update, and delete access to appointments will use this API.  Systems implementing service-scheduling will use this API to store appointment records.
+  contact:
+    url: 'https://fortellis.io'
+    email: fortellis@fortellis.io
+host: fortellis.io
+basePath: /service/appointmentsasdfgh
+
+schemes:
+  - https
+
+paths:
+  /:
+    get:
+      summary: Query appointments
+      description: Query appointments
+      operationId: queryAppointments
+      tags:
+        - query
+      parameters:
+        - name: Accept
+          in: header
+          type: string
+          enum:
+            - application/json
+        - $ref: '#/parameters/header.Request-Id'
+        - $ref: '#/parameters/query.dateTimeInterval'
+        - $ref: '#/parameters/query.vehicleHref'
+        - $ref: '#/parameters/query.customerHref'
+        - $ref: '#/parameters/query.advisorHref'
+      produces:
+        - application/json
+      consumes:
+        - application/json
+      responses:
+        200:
+          description: OK
+          schema:
+            type: object
+            properties:
+              status:
+                type: string
+                example: 'found'
+        400:
+          $ref: '#/responses/BadRequest'
+        401:
+          $ref: '#/responses/Unauthorized'
+        403:
+          $ref: '#/responses/Forbidden'
+
+parameters:
+  query.dateTimeInterval:
+    name: dateTimeInterval
+    in: query
+    required: false
+    type: string
+    description: The ISO 8601 data and time interval to filter the appointment query
+
+  query.vehicleHref:
+    name: vehicleHref
+    in: query
+    required: false
+    type: string
+    description: The vehicle resource hyperlink to filter query results
+
+  query.customerHref:
+    name: customerHref
+    in: query
+    required: false
+    type: string
+    description: The customer resource hyperlink to filter query results
+
+  query.advisorHref:
+    name: advisorHref
+    in: query
+    required: false
+    type: string
+    description: The advisor resource hyperlink to filter query results
+
+  # Common Parameters (see common.yaml)
+  header.Request-Id:
+    description: OK
+    name: Request-Id
+    in: header
+    required: true
+    type: string
+    format: guid
+
+responses:
+  AppointmentCollection:
+    description: OK
+    headers:
+      Request-Id:
+        type: string
+    schema:
+      $ref: '#/definitions/AppointmentCollection'
+
+  Appointment:
+    description: OK
+    headers:
+      Request-Id:
+        type: string
+      Preference-Applied:
+        type: string
+        enum:
+          - return=representation
+          - return=minimal
+    schema:
+      $ref: '#/definitions/AppointmentResource'
+
+  CreateAppointment:
+    description: Created
+    headers:
+      Request-Id:
+        type: string
+      Preference-Applied:
+        type: string
+        enum:
+          - return=representation
+          - return=minimal
+    schema:
+      $ref: '#/definitions/AppointmentResource'
+
+  # Common Responses (see common.yaml)
+  Success:
+    description: 204 - Non Content
+    headers:
+      Content-Language:
+        type: string
+      Content-Type:
+        type: string
+      Request-Id:
+        type: string
+
+  BadRequest:
+    description: 400 - Bad Request
+    headers:
+      Content-Language:
+        type: string
+      Content-Type:
+        type: string
+      Request-Id:
+        type: string
+    schema:
+      $ref: '#/definitions/ErrorResponse'
+
+  Unauthorized:
+    description: 401 - Unauthorized
+    headers:
+      Content-Language:
+        type: string
+      Content-Type:
+        type: string
+      Request-Id:
+        type: string
+    schema:
+      $ref: '#/definitions/ErrorResponse'
+
+  Forbidden:
+    description: 403 - Forbidden
+    headers:
+      Content-Language:
+        type: string
+      Content-Type:
+        type: string
+      Request-Id:
+        type: string
+    schema:
+      $ref: '#/definitions/ErrorResponse'
+
+  NotFound:
+    description: 404 - Not Found
+    headers:
+      Content-Language:
+        type: string
+      Content-Type:
+        type: string
+      Request-Id:
+        type: string
+    schema:
+      $ref: '#/definitions/ErrorResponse'
+
+definitions:
+  Appointment:
+    description: An appointment
+    properties:
+      dateTime:
+        type: string
+        description: The ISO 8601 encode date and time of the appointment
+      requestedServices:
+        type: array
+        items:
+          $ref: '#/definitions/RequestedService'
+        description: The requested services to be performed on the vehicle
+      vehicleHref:
+        type: string
+        description: The hyperlink to the Vehicle resource scheduled for the appointment.
+      vehicleSpec:
+        $ref: '#/definitions/VehicleSpecification'
+        description: The make, model, and year describing the vehicle to be serviced.  This must be provided if the 'vehicleHref' property is not specified.
+      vehicleMileage:
+        $ref: '#/definitions/Measurement'
+        description: The estimated mileage of the vehicle
+      customerHref:
+        type: string
+        description: The hyperlink to the customer who is requesting the vehicle service
+      contact:
+        $ref: '#/definitions/ContactMethod'
+        description: |
+          A contact method for the customer.  This takes precedence over contact 
+          methods present in the source customer record.  This must be provided 
+          if a customer resource link is not included.
+      transportHref:
+        type: string
+        description: The hyperlink to the requested transport
+      advisorHref:
+        type: string
+        description: The hyperlink to the requested service advisor
+      teamHref:
+        type: string
+        description: The hyperlink to the requested service team
+      concerns:
+        type: string
+        description: Concerns of the customer thay prompted the appointment
+      remarks:
+        type: string
+        description: Comments by the service department staff about the appointment
+    required:
+      - dateTime
+      - requestedServices
+    example:
+      dateTime: '2019-06-10T16:15:00+08:00'
+      requestedServices:
+        - description: 'Filler, Tail Lamp Center - Replace (Labor Only)'
+          sourceHref: 'api.fortellis.io/service/reference/v4/service-packages/model/CHEV-CAMAC-2001-US/packages/BF018/specifications/8994972'
+      vehicleHref: 'api.fortellis.io/service/v1/vehicles/123'
+      vehicleMileage:
+        value: 34760
+        units: 'MILES'
+      customerHref: 'api.fortellis.io/service/v1/customers/123'
+      contact:
+        label: 'mobile'
+        uri: 'tel:1-234-567-8900'
+        preferences:
+          - startDay: 'MON'
+            endDay: 'FRI'
+            startTime: '1000'
+            endTime: '1600'
+      transportHref: 'api.fortellis.io/service/v1/scheduling/lookups/transports/123'
+      advisorHref: 'api.fortellis.io/service/v1/scheduling/lookups/advisors/123'
+      concerns: 'My driver side front door rattles when I drive faster than 45'
+      remarks: 'Customer reports that driver side front door exhibits a rattle above 45mph'
+
+  RequestedService:
+    description: Requested Service
+    type: object
+    properties:
+      description:
+        type: string
+        description: The textual description of the requested service
+      concern:
+        type: string
+        description: The textual description of the concern that prompted the requested service
+      sourceHref:
+        type: string
+        description: |
+          The hypermedia link to the source service specification.  This will 
+          link to a service-packages Specification or LaborOperation resouce.
+      overrides:
+        type: object
+        properties:
+          quote:
+            $ref: '#/definitions/Price'
+    required:
+      - description
+    example:
+      description: 'Replace Air Filter'
+      sourceHref: 'api.fortellis.io/service/reference/v4/service-packages/model/CHEV-CAMAC-2001-US/packages/BF018/specifications/8994972'
+
+  # Resources
+  AppointmentResource:
+    description: Appointment Resource
+    allOf:
+      - $ref: '#/definitions/Appointment'
+      - type: object
+        properties:
+          appointmentId:
+            type: string
+            description: The appointment unique identifier
+          links:
+            $ref: '#/definitions/AppointmentLinks'
+            description: The hypermedia links of the Appointment resource
+        required:
+          - appointmentId
+          - links
+    example:
+      appointmentId: '123'
+      dateTime: '2019-06-10T16:15:00+08:00'
+      requestedServices:
+        - description: 'Filler, Tail Lamp Center - Replace (Labor Only)'
+          sourceHref: 'api.fortellis.io/service/reference/v4/service-packages/model/CHEV-CAMAC-2001-US/packages/BF018/specifications/8994972'
+      vehicleHref: 'api.fortellis.io/service/v1/vehicles/123'
+      vehicleMileage:
+        value: 34760
+        units: 'MILES'
+      customerHref: 'api.fortellis.io/service/v1/customers/123'
+      contact:
+        label: 'mobile'
+        uri: 'tel:1-234-567-8900'
+        preferences:
+          - startDay: 'MON'
+            endDay: 'FRI'
+            startTime: '1000'
+            endTime: '1600'
+      transportHref: 'api.fortellis.io/service/v1/scheduling/lookups/transports/123'
+      advisorHref: 'api.fortellis.io/service/v1/scheduling/lookups/advisors/123'
+      concerns: 'My driver side front door rattles when I drive faster than 45'
+      remarks: 'Customer reports that driver side front door exhibits a rattle above 45mph'
+      links:
+        self:
+          href: 'api.fortellis.io/service/v3/appointments/123'
+
+  AppointmentLinks:
+    description: Appointment Links
+    type: object
+    properties:
+      self:
+        $ref: '#/definitions/LinkDescriptionObject'
+        description: The canonical link to the appointment resource
+    required:
+      - self
+    example:
+      self:
+        href: 'api.fortellis.io/service/v3/appointments/123'
+
+  # Requests
+  CancelRequest:
+    description: Cancel Request
+    type: object
+    properties:
+      reason:
+        type: string
+        description: Free-form comments that explain why the appointment was cancelled
+    example:
+      reason: 'Rescheduled for the following week'
+
+  # Collections
+  AppointmentCollection:
+    description: Appointment Collection
+    type: object
+    allOf:
+      - $ref: '#/definitions/BaseCollection'
+      - properties:
+          items:
+            type: array
+            items:
+              $ref: '#/definitions/Appointment'
+        required:
+          - items
+    example:
+      items:
+        - appointmentId: '123'
+          dateTime: '2019-06-10T16:15:00+08:00'
+          requestedServices:
+            - description: 'Filler, Tail Lamp Center - Replace (Labor Only)'
+              sourceHref: 'api.fortellis.io/service/reference/v4/service-packages/model/CHEV-CAMAC-2001-US/packages/BF018/specifications/8994972'
+          vehicleHref: 'api.fortellis.io/service/v1/vehicles/123'
+          vehicleMileage:
+            value: 75201
+            units: 'MILES'
+          customerHref: 'api.fortellis.io/service/v1/customers/123'
+          contact:
+            label: 'mobile'
+            uri: 'tel:1-234-567-8900'
+            preferences:
+              - startDay: 'MON'
+                endDay: 'FRI'
+                startTime: '1000'
+                endTime: '1600'
+          transportHref: 'api.fortellis.io/service/v1/scheduling/lookups/transports/123'
+          advisorHref: 'api.fortellis.io/service/v1/scheduling/lookups/advisors/123'
+          concerns: 'My driver side front door rattles when I drive faster than 45'
+          remarks: 'Customer reports that driver side front door exhibits a rattle above 45mph'
+          links:
+            self:
+              href: 'api.fortellis.io/service/v3/appointments/123'
+      totalItems: 1
+      totalPages: 1
+      links:
+        first:
+          href: 'api.fortellis.io/service/v3/appointments?page=1&pageSize=1'
+
+  # Common Definitions (see common.yaml)
+  VehicleSpecification:
+    description: Vehicle Specification
+    type: object
+    properties:
+      makeCode:
+        type: string
+        description: The make code of the vehicle
+      modelCode:
+        type: string
+        description: The model code of the vehicle
+      modelYear:
+        type: number
+        description: The model year of the vehicle
+    required:
+      - makeCode
+      - modelCode
+      - modelYear
+    example:
+      makeCode: CHEV
+      modelCode: CAMAC
+      modelYear: 2001
+
+  Price:
+    description: Price
+    type: object
+    properties:
+      currencyCode:
+        type: string
+        description: The ISO 4217 three letter currency code of the price
+      netPrice:
+        type: number
+        description: Price excluding sales tax / VAT expressed in the given currency
+      grossValue:
+        type: number
+        description: Price including sales tax / VAT expressed in the given currency
+      taxValue:
+        type: number
+        description: Value of tax expressed in the given currency
+      taxRate:
+        type: number
+        description: Tax rate as a percentage
+      netDiscountedPrice:
+        type: number
+        description: Discounted price exluding sales tax in the given currency
+      grossDiscountedPrice:
+        type: number
+        description: Discounted price including sales tax in the given currency
+    required:
+      - currencyCode
+      - netPrice
+      - grossValue
+      - taxValue
+      - taxRate
+    example:
+      currencyCode: USD
+      netPrice: 125.5
+      grossValue: 123
+
+  Measurement:
+    description: Measurement
+    type: object
+    properties:
+      value:
+        type: number
+      units:
+        type: string
+        enum:
+          - MILES
+          - KM
+          - HOURS
+    example:
+      value: 75201
+      units: 'MILES'
+
+  BaseCollection:
+    description: Base Collection
+    type: object
+    properties:
+      totalItems:
+        type: number
+        description: The total number of items contained in the collection
+      totalPages:
+        type: number
+        description: The total number of pages given the requested page size
+      links:
+        $ref: '#/definitions/BaseCollectionLinks'
+        description: The hypermedia links describing the posible resource actions
+    required:
+      - totalItems
+      - totalPages
+      - links
+    example:
+      totalItems: 1
+
+  BaseCollectionLinks:
+    description: Base Collection Links
+    type: object
+    properties:
+      next:
+        $ref: '#/definitions/LinkDescriptionObject'
+        description: The next page of query results
+      prev:
+        $ref: '#/definitions/LinkDescriptionObject'
+        description: The previous page of query results
+      first:
+        $ref: '#/definitions/LinkDescriptionObject'
+        description: The first page of query results
+    required:
+      - first
+    example:
+      next:
+      href: 'booga'
+
+  ContactMethod:
+    description: Contact Method
+    type: object
+    properties:
+      label:
+        type: string
+        description: A label used to describe the contact method (e.g. home, work-cell).
+      uri:
+        type: string
+        description: The RFC 3986 encoded URI address of the contact method.
+      preferences:
+        type: array
+        items:
+          $ref: '#/definitions/ContactPreference'
+    required:
+      - label
+      - uri
+    example:
+      label: 'this is a label'
+
+  ContactPreference:
+    description: Contact Preference
+    type: object
+    properties:
+      startDay:
+        type: string
+        enum:
+          - MON
+          - TUE
+          - WED
+          - THU
+          - FRI
+          - SAT
+          - SUN
+        description: The starting day of the interval
+      endDay:
+        type: string
+        enum:
+          - MON
+          - TUE
+          - WED
+          - THU
+          - FRI
+          - SAT
+          - SUN
+        description: The ending day of the interval
+      startTime:
+        type: string
+        description: The RFC 3339 encoded starting time of the interval
+      endTime:
+        type: string
+        description: The RFC 3339 encoded ending time of the interval
+      timeZone:
+        type: string
+        description: The IANA Timezone Database encoded timezone code of the interval
+    example:
+      startDay: MON
+
+  LinkDescriptionObject:
+    description: Link Description Object
+    type: object
+    properties:
+      href:
+        type: string
+        description: The target URI
+      rel:
+        type: string
+        description: The link relation type
+      method:
+        type: string
+        description: The HTTP verb that MUST be used to make a request to the target of the link
+      title:
+        type: string
+        description: A human readable title for the link that conveys the purpose of the link
+    required:
+      - href
+    example:
+      href: 'href'
+
+  ErrorResponse:
+    description: OK
+    type: object
+    properties:
+      code:
+        type: integer
+        format: int32
+      message:
+        type: string
+    required:
+      - code
+      - message
+    example:
+      code: 123
